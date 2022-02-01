@@ -36,14 +36,43 @@
     <div v-if="workflow === enmWorkflow.EDITLANGUAGE">
       <h1>Step 3 of 3: Edit the language file</h1>
 
+      <v-switch
+        label="Only show necessary translations"
+        v-model="onlyShowNecessaryTranslations"
+      ></v-switch>
+
       <div v-if="editorData" style="margin-top: 16px">
-        <v-row v-for="key of Object.keys(editorData)" v-bind:key="key">
-          <div v-for="i in countDots(key)" v-bind:key="i" style="width: 16px"></div>
-          <div v-if="editorData[key]._type_ === 'category'" style="margin-bottom: 8px">
+        <v-row
+          v-for="key of Object.keys(editorData)"
+          v-bind:key="key"
+          style="margin: 0px"
+        >
+          <div
+            v-for="i in countDots(key)"
+            v-bind:key="i"
+            style="width: 16px"
+          ></div>
+          <div
+            v-if="
+              editorData[key]._type_ === 'category' &&
+              (!onlyShowNecessaryTranslations || editorData[key]._isNecessary_)
+            "
+            style="margin-bottom: 8px"
+          >
             <h3>{{ editorData[key]._value_ }}</h3>
           </div>
-          <v-row v-if="editorData[key]._type_ === 'entry'">
-            <v-text-field v-bind:label="editorData[key]._reference_" v-model="editorData[key]._value_"></v-text-field>
+          <v-row
+            v-if="
+              editorData[key]._type_ === 'entry' &&
+              (!onlyShowNecessaryTranslations || editorData[key]._isNecessary_)
+            "
+            style="margin: 0px"
+          >
+            <v-text-field
+              v-bind:label="editorData[key]._reference_"
+              v-model="editorData[key]._value_"
+              style="margin-top: 8px"
+            ></v-text-field>
           </v-row>
         </v-row>
       </div>
@@ -70,6 +99,8 @@ export default {
 
   data: () => ({
     workflow: enmWorkflow.LOADLANGUAGEFILE,
+
+    onlyShowNecessaryTranslations: false,
 
     languageFile: null,
     referenceFile: null,
@@ -121,21 +152,25 @@ export default {
       global: {
         _type_: "category",
         _value_: "global",
+        _isNecessary_: false,
       },
       "global.id": {
         _type_: "entry",
         _value_: "de",
         _reference_: "en",
+        _isNecessary_: false,
       },
       "global.lang": {
         _type_: "entry",
         _value_: "Deutsch",
         _reference_: "English",
+        _isNecessary_: false,
       },
       "global.idLocale": {
         _type_: "entry",
         _value_: "de-DE",
         _reference_: "en-EN",
+        _isNecessary_: false,
       },
       "global.generalHelpTextWithPhoneNumber": {
         _type_: "entry",
@@ -143,30 +178,36 @@ export default {
           "Bitte kontaktiere die Service Hotline {serviceHotline}, wenn Du Unterstützung benötigst.",
         _reference_:
           "Contact the service hotline at {serviceHotline} if you need assistance.",
+        _isNecessary_: false,
       },
 
       authMethod: {
         _type_: "category",
         _value_: "authMethod",
+        _isNecessary_: true,
       },
       "authMethod.pleaseSelectAuthMethod": {
         _type_: "entry",
         _value_: "Wie möchtest Du Dich anmelden?",
         _reference_: "How do you want to login?",
+        _isNecessary_: false,
       },
       "authMethod.pin": {
         _type_: "category",
         _value_: "pin",
+        _isNecessary_: true,
       },
       "authMethod.pin.name": {
         _type_: "entry",
         _value_: "PIN",
         _reference_: "PIN",
+        _isNecessary_: false,
       },
       "authMethod.pin.caption": {
         _type_: "entry",
         _value_: "Anmelden um zu laden",
         _reference_: "Login to charge",
+        _isNecessary_: true,
       },
     },
   }),
@@ -230,7 +271,7 @@ export default {
     },
 
     countDots(text) {
-      return (text.match(/\./g) || []).length
+      return (text.match(/\./g) || []).length;
     },
 
     async readFilesAndProvideEditor() {
