@@ -35,6 +35,21 @@
     <!-- Workflow: 3 - edit the language file -->
     <div v-if="workflow === enmWorkflow.EDITLANGUAGE">
       <h1>Step 3 of 3: Edit the language file</h1>
+
+      <div v-if="editorData">
+        <div v-for="key of Object.keys(editorData)" v-bind:key="key">
+          <strong>{{ key }}</strong>
+          <div v-if="typeof editorData[key] === 'object'">
+            <div
+              v-for="key2 of Object.keys(editorData[key])"
+              v-bind:key="`${key}.${key2}`"
+              style="margin-left: 16px"
+            >
+              <strong>{{ key2 }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </v-container>
 </template>
@@ -61,6 +76,49 @@ export default {
 
     languageFile: null,
     referenceFile: null,
+
+    editorData: null,
+
+    // we're deadling with a hiearchical object where a key can only have a string value or an Object
+    mockData: {
+      global: {
+        id: {
+          _value_: "de",
+          _reference_: "en",
+        },
+        lang: {
+          _value_: "Deutsch",
+          _reference_: "English",
+        },
+        idLocale: {
+          _value_: "de-DE",
+          _reference_: "en-EN",
+        },
+        generalHelpTextWithPhoneNumber: {
+          _value_:
+            "Bitte kontaktiere die Service Hotline {serviceHotline}, wenn Du Unterstützung benötigst.",
+          _reference_:
+            "Contact the service hotline at {serviceHotline} if you need assistance.",
+        },
+      },
+
+      authMethod: {
+        pleaseSelectAuthMethod: {
+          _value_: "Wie möchtest Du Dich anmelden?",
+          _reference_: "How do you want to login?",
+        },
+        pin: {
+          name: {
+            _value_: "PIN",
+            _reference_: "PIN",
+          },
+          caption: {
+            _value_: "Anmelden um zu laden",
+            _reference_: "Login to charge",
+          },
+        },
+      },
+    },
   }),
 
   computed: {
@@ -125,6 +183,7 @@ export default {
       await this.readFiles();
 
       // TODO: build up internal structures for editing
+      this.editorData = this.mockData; // KILLME
 
       this.workflow = enmWorkflow.EDITLANGUAGE;
     },
