@@ -36,19 +36,16 @@
     <div v-if="workflow === enmWorkflow.EDITLANGUAGE">
       <h1>Step 3 of 3: Edit the language file</h1>
 
-      <div v-if="editorData">
-        <div v-for="key of Object.keys(editorData)" v-bind:key="key">
-          <strong>{{ key }}</strong>
-          <div v-if="typeof editorData[key] === 'object'">
-            <div
-              v-for="key2 of Object.keys(editorData[key])"
-              v-bind:key="`${key}.${key2}`"
-              style="margin-left: 16px"
-            >
-              <strong>{{ key2 }}</strong>
-            </div>
+      <div v-if="editorData" style="margin-top: 16px">
+        <v-row v-for="key of Object.keys(editorData)" v-bind:key="key">
+          <div v-for="i in countDots(key)" v-bind:key="i" style="width: 16px"></div>
+          <div v-if="editorData[key]._type_ === 'category'" style="margin-bottom: 8px">
+            <h3>{{ editorData[key]._value_ }}</h3>
           </div>
-        </div>
+          <v-row v-if="editorData[key]._type_ === 'entry'">
+            <v-text-field v-bind:label="editorData[key]._reference_" v-model="editorData[key]._value_"></v-text-field>
+          </v-row>
+        </v-row>
       </div>
     </div>
   </v-container>
@@ -119,6 +116,59 @@ export default {
         },
       },
     },
+
+    mockDataFlat: {
+      global: {
+        _type_: "category",
+        _value_: "global",
+      },
+      "global.id": {
+        _type_: "entry",
+        _value_: "de",
+        _reference_: "en",
+      },
+      "global.lang": {
+        _type_: "entry",
+        _value_: "Deutsch",
+        _reference_: "English",
+      },
+      "global.idLocale": {
+        _type_: "entry",
+        _value_: "de-DE",
+        _reference_: "en-EN",
+      },
+      "global.generalHelpTextWithPhoneNumber": {
+        _type_: "entry",
+        _value_:
+          "Bitte kontaktiere die Service Hotline {serviceHotline}, wenn Du Unterstützung benötigst.",
+        _reference_:
+          "Contact the service hotline at {serviceHotline} if you need assistance.",
+      },
+
+      authMethod: {
+        _type_: "category",
+        _value_: "authMethod",
+      },
+      "authMethod.pleaseSelectAuthMethod": {
+        _type_: "entry",
+        _value_: "Wie möchtest Du Dich anmelden?",
+        _reference_: "How do you want to login?",
+      },
+      "authMethod.pin": {
+        _type_: "category",
+        _value_: "pin",
+      },
+      "authMethod.pin.name": {
+        _type_: "entry",
+        _value_: "PIN",
+        _reference_: "PIN",
+      },
+      "authMethod.pin.caption": {
+        _type_: "entry",
+        _value_: "Anmelden um zu laden",
+        _reference_: "Login to charge",
+      },
+    },
   }),
 
   computed: {
@@ -179,11 +229,15 @@ export default {
       console.log("referenceContent:", referenceContent);
     },
 
+    countDots(text) {
+      return (text.match(/\./g) || []).length
+    },
+
     async readFilesAndProvideEditor() {
       await this.readFiles();
 
       // TODO: build up internal structures for editing
-      this.editorData = this.mockData; // KILLME
+      this.editorData = this.mockDataFlat; // KILLME
 
       this.workflow = enmWorkflow.EDITLANGUAGE;
     },
