@@ -5,6 +5,12 @@
 npm install
 ```
 
+If you're on Windows, install win-node-env:
+
+```
+npm install -g win-node-env
+```
+
 ### Compiles and hot-reloads for development
 ```
 npm run serve
