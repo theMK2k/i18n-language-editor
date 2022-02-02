@@ -1,4 +1,6 @@
-# i18n-language-editor
+# I18N Language Editor
+
+**Note**: This is the source code project, if you want to directly run the webapp follow this link: <https://themk2k.github.io/i18n-language-editor/>
 
 ## Project setup
 ```
@@ -13,7 +15,7 @@ npm install -g win-node-env
 
 ### Compiles and hot-reloads for development
 ```
-npm run serve
+npm start
 ```
 
 ### Compiles and minifies for production
