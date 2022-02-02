@@ -1,5 +1,7 @@
 # I18N Language Editor
 
+A universal editor for JSON based i18n language files. Everything is handled in the browser, no backend / database necessary.
+
 **Note**: This is the source code project, if you want to directly run the webapp follow this link: <https://themk2k.github.io/i18n-language-editor/>
 
 ## Project setup
