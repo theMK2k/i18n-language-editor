@@ -68,11 +68,14 @@
             "
             style="margin: 0px"
           >
-            <v-text-field
+            <v-textarea
               v-bind:label="editorData[key]._reference_"
-              v-model="editorData[key]._value_"
+              v-bind:value="editorData[key]._value_"
+              auto-grow
+              rows="1"
               style="margin-top: 8px"
-            ></v-text-field>
+              v-on:change="onTextareaChange(editorData[key], $event)"
+            ></v-textarea>
           </v-row>
         </v-row>
       </div>
@@ -268,6 +271,13 @@ export default {
 
       console.log("languageContent:", languageContent);
       console.log("referenceContent:", referenceContent);
+
+      const flattenResult = helpers.flattenObject(
+        JSON.parse(languageContent),
+        JSON.parse(referenceContent)
+      );
+
+      this.editorData = flattenResult.flattenedObject;
     },
 
     countDots(text) {
@@ -277,11 +287,32 @@ export default {
     async readFilesAndProvideEditor() {
       await this.readFiles();
 
-      // TODO: build up internal structures for editing
-      this.editorData = this.mockDataFlat; // KILLME
-
       this.workflow = enmWorkflow.EDITLANGUAGE;
     },
+
+    onTextareaChange(item, value) {
+      console.log('[onTextareaChange] item:', item);
+      console.log('[onTextareaChange] value:', value);
+
+      item._value_ = value;
+
+      console.log('[onTextareaChange] this.editorData:', this.editorData)
+    }
   },
 };
 </script>
+
+<style scoped>
+/* https://stackoverflow.com/questions/60400194/how-to-create-a-multi-line-label-for-a-v-checkbox */
+
+.v-label {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+
+/* .v-input--selection-controls .v-input__slot > .v-label {
+  flex-direction: column;
+  align-items: flex-start;
+} */
+</style>
