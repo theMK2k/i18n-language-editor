@@ -13,7 +13,7 @@ function readTextFileAsync(file) {
 }
 
 function keyToName(key) {
-  return key.replace(/_/g, ".")
+  return key.replace(/_/g, ".");
 }
 
 /**
@@ -43,11 +43,10 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
   for (let key of referenceObject
     ? Object.keys(referenceObject)
     : Object.keys(sourceObject)) {
-    
     if (key.includes(".")) {
       throw new Error(`The key '${key}' contains dots, which is not allowed!`);
     }
-    
+
     const referenceItem = referenceObject ? referenceObject[key] : null;
     const sourceItem = sourceObject[key];
 
@@ -56,11 +55,18 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
         ? typeof referenceItem === "string"
         : typeof sourceItem === "string"
     ) {
+      const isNecessary =
+        !sourceItem || (referenceItem && (sourceItem !== referenceItem));
+
+      if (isNecessary) {
+        result.containsNecessaryEntries = true;
+      }
+
       targetObject[`${keyPrefix ? keyPrefix + "." : ""}${key}`] = {
         _type_: "entry",
         _value_: sourceItem,
         _reference_: referenceItem || keyToName(key),
-        _isNecessary_: true, // TODO: determine if this is a necessary entry
+        _isNecessary_: isNecessary,
       };
     } else if (
       referenceObject
@@ -82,6 +88,10 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
       );
 
       categoryItem._isNecessary_ = flattenResult.containsNecessaryEntries;
+
+      if (categoryItem._isNecessary_) {
+        result.containsNecessaryEntries = true;
+      }
     } else {
       throw new Error(
         `type not allowed:`,
@@ -93,7 +103,6 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
   console.groupEnd();
 
   result.flattenedObject = targetObject;
-  result.containsNecessaryEntries = true; // TODO: determine this
   return result;
 }
 
