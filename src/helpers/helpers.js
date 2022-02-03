@@ -16,6 +16,40 @@ function keyToName(key) {
   return key.replace(/_/g, ".");
 }
 
+function unflattenObject(flattenedObject) {
+  const result = {};
+
+  for (let key of Object.keys(flattenedObject)) {
+    const item = flattenedObject[key];
+
+    if (item._type_ !== "entry") {
+      continue;
+    }
+
+    console.log('unflattenObject handling', key);
+    
+    const keyparts = key.split(".");
+    let builtkey = "";
+    let currentLevel = result;
+
+    for (let keypart of keyparts) {
+      builtkey = `${builtkey}${builtkey ? '.' : ''}${keypart}`;
+
+      if (builtkey === key) {
+        currentLevel[keypart] = item._value_;
+      } else {
+        if (!currentLevel[keypart]) {
+          currentLevel[keypart] = {};
+        }
+
+        currentLevel = currentLevel[keypart];
+      }
+    }
+  }
+
+  return result;
+}
+
 /**
  *
  * @param {Object} sourceObject
@@ -47,31 +81,37 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
       throw new Error(`The key '${key}' contains dots, which is not allowed!`);
     }
 
-    const referenceItem = referenceObject ? referenceObject[key] : null;
-    const sourceItem = sourceObject[key];
+    const referenceContent = referenceObject ? referenceObject[key] : null;
+    const sourceContent = sourceObject[key];
 
     if (
       referenceObject
-        ? typeof referenceItem === "string"
-        : typeof sourceItem === "string"
+        ? typeof referenceContent === "string"
+        : typeof sourceContent === "string"
     ) {
       const isNecessary =
-        !sourceItem || (referenceItem && (sourceItem !== referenceItem));
+        !sourceContent || (referenceContent && (sourceContent == referenceContent));
 
       if (isNecessary) {
         result.containsNecessaryEntries = true;
       }
 
-      targetObject[`${keyPrefix ? keyPrefix + "." : ""}${key}`] = {
+      const entryItem = {
         _type_: "entry",
-        _value_: sourceItem,
-        _reference_: referenceItem || keyToName(key),
+        _value_: sourceContent,
+        _reference_: referenceContent || keyToName(key),
         _isNecessary_: isNecessary,
       };
+
+      targetObject[`${keyPrefix ? keyPrefix + "." : ""}${key}`] = entryItem;
+
+      if (entryItem._isNecessary_) {
+        console.log('is necessary:', entryItem);
+      }
     } else if (
       referenceObject
-        ? typeof referenceItem === "object"
-        : typeof sourceItem === "object"
+        ? typeof referenceContent === "object"
+        : typeof sourceContent === "object"
     ) {
       const categoryItem = {
         _type_: "category",
@@ -81,8 +121,8 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
       targetObject[`${keyPrefix ? keyPrefix + "." : ""}${key}`] = categoryItem;
 
       const flattenResult = flattenObject(
-        sourceItem,
-        referenceItem,
+        sourceContent,
+        referenceContent,
         targetObject,
         `${keyPrefix ? keyPrefix + "." : ""}${key}`
       );
@@ -95,7 +135,7 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
     } else {
       throw new Error(
         `type not allowed:`,
-        referenceObject ? typeof referenceItem : typeof sourceItem
+        referenceObject ? typeof referenceContent : typeof sourceContent
       );
     }
   }
@@ -106,4 +146,4 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
   return result;
 }
 
-export { readTextFileAsync, flattenObject };
+export { readTextFileAsync, flattenObject, unflattenObject };
