@@ -90,7 +90,7 @@ function flattenObject(sourceObject, referenceObject, targetObject, keyPrefix) {
         : typeof sourceContent === "string"
     ) {
       const isNecessary =
-        !sourceContent || (referenceContent && (sourceContent == referenceContent));
+        !sourceContent; //  || (referenceContent && (sourceContent == referenceContent))
 
       if (isNecessary) {
         result.containsNecessaryEntries = true;
