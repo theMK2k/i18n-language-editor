@@ -72,7 +72,9 @@
       <v-row>
         <h1>Step 3 of 3: Edit the language file</h1>
         <v-spacer></v-spacer>
-        <v-btn color="primary" v-on:click="onGenerateResult">DONE, GENERATE AND DOWNLOAD RESULT</v-btn>
+        <v-btn color="primary" v-on:click="onGenerateResult"
+          >DONE, GENERATE AND DOWNLOAD RESULT</v-btn
+        >
       </v-row>
 
       <v-switch
@@ -242,8 +244,28 @@ export default {
 
     onGenerateResult() {
       const result = helpers.unflattenObject(this.editorData);
-      console.log('result:', JSON.stringify(result, null, 2));
-    }
+      // console.log('result:', JSON.stringify(result, null, 2));
+      const blob = new Blob([JSON.stringify(result, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(this.languageFile.name || "download").split(".")[0]}_edited.json`;
+      console.log('download filename:', a.download);
+
+      const clickHandler = () => {
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          this.removeEventListener("click", clickHandler);
+        }, 150);
+      };
+
+      a.addEventListener('click', clickHandler, false);
+      a.click();
+      return a;
+    },
   },
 };
 </script>
