@@ -72,7 +72,7 @@
       <v-row>
         <h1>Step 3 of 3: Edit the language file</h1>
         <v-spacer></v-spacer>
-        <v-btn color="primary" v-on:click="onGenerateResult"
+        <v-btn color="primary" v-on:click="onGenerateResult(false)"
           >DONE, GENERATE AND DOWNLOAD RESULT</v-btn
         >
       </v-row>
@@ -109,7 +109,7 @@
             "
             style="margin: 0px"
           >
-            <div style="width: 100%">
+            <div style="width: 100%" v-bind:ref="`entry_${key}`">
               <pre>{{ editorData[key]._reference_ }}</pre>
               <!--               v-bind:label="editorData[key]._reference_" -->
               <v-textarea
@@ -117,6 +117,7 @@
                 auto-grow
                 rows="1"
                 style="margin-top: -12px; margin-bottom: 16px"
+                v-bind:error-messages="editorData[key]._statusmessages_"
                 v-on:change="onTextareaChange(editorData[key], $event)"
               ></v-textarea>
             </div>
@@ -124,6 +125,24 @@
         </v-row>
       </div>
     </div>
+    <v-dialog v-model="showDialog" persistent max-width="600">
+      <v-card>
+        <v-card-title class="text-h5"> Problems detected </v-card-title>
+        <v-card-text
+          >One or more translations have incorrect values, please check them
+          before saving the result.</v-card-text
+        >
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="green darken-1" text @click="onGenerateResult(true)">
+            Ignore the warnings and proceed
+          </v-btn>
+          <v-btn color="primary darken-1" text @click="showDialog = false">
+            Cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -155,6 +174,8 @@ export default {
     referenceFile: null,
 
     editorData: null,
+
+    showDialog: false,
   }),
 
   computed: {
@@ -179,6 +200,7 @@ export default {
       this.languageFile = null;
       this.isReferenceFileAvailable = false;
       this.referenceFile = null;
+      this.showDialog = false;
     },
 
     async onNext() {
@@ -191,7 +213,7 @@ export default {
     },
 
     onUpdateFile(files) {
-      console.log("onUpdateFile files[0]:", files[0]);
+      // console.log("onUpdateFile files[0]:", files[0]);
 
       if (this.workflow === enmWorkflow.LOADLANGUAGEFILE) {
         this.languageFile = files[0];
@@ -202,7 +224,7 @@ export default {
     },
 
     async readFiles() {
-      console.log("helpers:", helpers);
+      // console.log("helpers:", helpers);
 
       const languageContent = await helpers.readTextFileAsync(
         this.languageFile
@@ -212,15 +234,15 @@ export default {
         ? await helpers.readTextFileAsync(this.referenceFile)
         : null;
 
-      console.log("languageContent:", languageContent);
-      console.log("referenceContent:", referenceContent);
+      // console.log("languageContent:", languageContent);
+      // console.log("referenceContent:", referenceContent);
 
-      const flattenResult = helpers.flattenObject(
+      const flattenResult = helpers.generateEditorData(
         JSON.parse(languageContent),
         JSON.parse(referenceContent)
       );
 
-      this.editorData = flattenResult.flattenedObject;
+      this.editorData = flattenResult.editorData;
     },
 
     countDots(text) {
@@ -234,16 +256,52 @@ export default {
     },
 
     onTextareaChange(item, value) {
-      console.log("[onTextareaChange] item:", item);
-      console.log("[onTextareaChange] value:", value);
+      // console.log("[onTextareaChange] item:", item);
+      // console.log("[onTextareaChange] value:", value);
 
       item._value_ = value;
 
-      console.log("[onTextareaChange] this.editorData:", this.editorData);
+      helpers.verifyEditorDataItem(item);
+
+      // console.log("[onTextareaChange] item (after verification):", item);
     },
 
-    onGenerateResult() {
-      const result = helpers.unflattenObject(this.editorData);
+    onGenerateResult(ignoreVerification) {
+      this.showDialog = false;
+
+      const verificationResult = helpers.verifyEditorData(this.editorData);
+
+      // console.log('[onGenerateResult] verificationResult:', verificationResult);
+
+      // show dialog if this.editorData contains errors or warnings
+      if (!ignoreVerification && verificationResult.hasProblems) {
+        let problemItemKey = null;
+
+        for (let key of Object.keys(this.editorData)) {
+          const item = this.editorData[key];
+
+          if (item._statusmessages_ && item._statusmessages_.length > 0) {
+            problemItemKey = key;
+            break;
+          }
+        }
+
+        if (problemItemKey) {
+          const htmlElement = this.$refs[`entry_${problemItemKey}`][0];
+
+          console.log("htmlElement:", htmlElement);
+
+          if (htmlElement) {
+            htmlElement.scrollIntoView({ block: "center", behavior: "smooth" });
+            htmlElement.focus();
+          }
+        }
+
+        this.showDialog = true;
+        return;
+      }
+
+      const result = helpers.generateResultObject(this.editorData);
       // console.log('result:', JSON.stringify(result, null, 2));
       const blob = new Blob([JSON.stringify(result, null, 2)], {
         type: "application/json",
@@ -252,17 +310,19 @@ export default {
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${(this.languageFile.name || "download").split(".")[0]}_edited.json`;
-      console.log('download filename:', a.download);
+      a.download = `${
+        (this.languageFile.name || "download").split(".")[0]
+      }_edited.json`;
+      // console.log("download filename:", a.download);
 
       const clickHandler = () => {
         setTimeout(() => {
           URL.revokeObjectURL(url);
-          this.removeEventListener("click", clickHandler);
+          a.removeEventListener("click", clickHandler);
         }, 150);
       };
 
-      a.addEventListener('click', clickHandler, false);
+      a.addEventListener("click", clickHandler, false);
       a.click();
       return a;
     },
