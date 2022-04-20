@@ -87,7 +87,7 @@ function generateEditorData(
     }
 
     const referenceContent = referenceObject ? referenceObject[key] : null;
-    const sourceContent = sourceObject[key];
+    const sourceContent = sourceObject ? sourceObject[key] : null;
 
     if (
       referenceObject
